@@ -1,6 +1,7 @@
 import streamlit as st
 import json
 import random
+from tempfile import NamedTemporaryFile
 from pathlib import Path
 
 st.set_page_config(page_title="Тренажёр ISTQB CTFL v4.0", page_icon="📘", layout="centered")
@@ -15,11 +16,52 @@ def load_questions():
         return json.load(f)
 
 
+def question_key(question):
+    return question.get("set"), question.get("number"), question.get("question")
+
+
+def save_explanation(question, explanation):
+    with open(QUESTIONS_FILE, encoding="utf-8") as f:
+        questions = json.load(f)
+
+    key = question_key(question)
+    matching_questions = [q for q in questions if question_key(q) == key]
+    if not matching_questions:
+        raise ValueError("Вопрос не найден в questions.json.")
+
+    for matching_question in matching_questions:
+        matching_question["explanation"] = explanation
+
+    temp_path = None
+    try:
+        with NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=QUESTIONS_FILE.parent,
+            prefix=f"{QUESTIONS_FILE.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as temp_file:
+            json.dump(questions, temp_file, ensure_ascii=False, indent=2)
+            temp_path = Path(temp_file.name)
+        temp_path.replace(QUESTIONS_FILE)
+    finally:
+        if temp_path is not None and temp_path.exists():
+            temp_path.unlink()
+
+    question["explanation"] = explanation
+    for session_question in st.session_state.questions + st.session_state.wrong_list:
+        if question_key(session_question) == key:
+            session_question["explanation"] = explanation
+    load_questions.clear()
+
+
 def init_session():
     if "index" not in st.session_state:
         st.session_state.index = 0
         st.session_state.correct = 0
         st.session_state.answered = False
+        st.session_state.show_answer = False
         st.session_state.selected = None
         st.session_state.questions = []
         st.session_state.wrong_list = []
@@ -35,6 +77,11 @@ def start_quiz(mode, chapter=None):
         if wrong_file.exists():
             with open(wrong_file, encoding="utf-8") as f:
                 all_q = json.load(f)
+            canonical_by_key = {question_key(q): q for q in load_questions()}
+            for q in all_q:
+                canonical_question = canonical_by_key.get(question_key(q))
+                if canonical_question is not None:
+                    q["explanation"] = canonical_question.get("explanation", "")
         else:
             st.warning("Сохранённых ошибок нет, будут использованы все вопросы.")
 
@@ -47,6 +94,7 @@ def start_quiz(mode, chapter=None):
     st.session_state.index = 0
     st.session_state.correct = 0
     st.session_state.answered = False
+    st.session_state.show_answer = False
     st.session_state.selected = None
     st.session_state.wrong_list = []
     st.session_state.per_chapter = {}
@@ -159,6 +207,27 @@ def run():
 
     # Кнопка «Ответить»
     if not st.session_state.answered:
+        if not st.session_state.show_answer:
+            if st.button("Подсмотреть правильный ответ"):
+                st.session_state.show_answer = True
+                st.rerun()
+
+        if st.session_state.show_answer:
+            correct_options = (
+                [options[i] for i in correct_idx]
+                if is_multi_select else [options[correct_idx]]
+            )
+            st.success(f"Правильный ответ: {', '.join(correct_options)}")
+            st.text_area(
+                "Пояснение к правильному ответу",
+                value=str(q.get("explanation") or ""),
+                key=f"explanation_{idx}",
+                height=120,
+            )
+            if st.button("Сохранить пояснение", key=f"save_explanation_{idx}"):
+                save_explanation(q, st.session_state[f"explanation_{idx}"])
+                st.success("Пояснение сохранено в questions.json.")
+
         if st.button("Ответить", type="primary") and selected:
             st.session_state.selected = selected
             st.session_state.answered = True
@@ -200,6 +269,7 @@ def run():
         if st.button("Следующий вопрос", type="primary"):
             st.session_state.index += 1
             st.session_state.answered = False
+            st.session_state.show_answer = False
             st.session_state.selected = None
             st.rerun()
 

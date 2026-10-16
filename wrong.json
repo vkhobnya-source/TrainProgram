@@ -1,14 +1,16 @@
 [
   {
-    "chapter": 1,
-    "question": "Какой из принципов тестирования утверждает, что невозможно доказать отсутствие дефектов?",
+    "number": 15,
+    "question": "Which of the following is NOT a benefit of static testing?",
     "options": [
-      "Тестирование демонстрирует наличие дефектов, а не их отсутствие",
-      "Исчерпывающее тестирование невозможно",
-      "Раннее тестирование экономит время и деньги",
-      "Дефекты кластеризуются"
+      "Having less expensive defect management due to the ease of detecting defects later i n the SDLC",
+      "Fixing defects found during static testing is generally much less expensive than fixing defects found during dynamic testing",
+      "Finding coding defects that might not have been found by only performing dynamic testin g",
+      "Detecting gaps and inconsistencies in requirements"
     ],
     "correct": 0,
-    "explanation": "Принцип 1: тестирование может показать наличие дефектов, но не может доказать их отсутствие."
+    "chapter": 3,
+    "explanation": "",
+    "set": "A"
   }
 ]

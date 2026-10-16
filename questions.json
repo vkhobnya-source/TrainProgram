@@ -98,7 +98,7 @@
     ],
     "correct": 1,
     "chapter": 1,
-    "explanation": "",
+    "explanation": "\nSyllabus Explanation (ISTQB CTFL 4.0):\n\n• i. Having domain knowledge (True): Essential for understanding how the user interacts with the system and for designing experience-based test cases [cite: 0.6.1].\n• ii. Creating a product vision (False): This is primarily the task of the Product Owner, Business Analyst, or business representatives, not the tester [cite: 0.6.2].\n• iii. Being a good team player (True): Vital for practicing effective collaboration under the whole-team approach [cite: 0.6.2].\n• iv. Planning and organizing the work of the team (False): This falls under a Test Management role, or is handled collectively by the Agile team, rather than being an individual tester's skill [cite: 0.6.2].\n• v. Critical thinking (True): One of the most important core generic skills for a tester to challenge assumptions, find hidden edges, and isolate software defects [cite: 0.6.2].\n",
     "set": "A"
   },
   {
@@ -676,7 +676,7 @@
     ],
     "correct": 3,
     "chapter": 1,
-    "explanation": "",
+    "explanation": "\nExplanation based on ISTQB Syllabus Concepts:\n\n• Why this is correct: The whole-team approach promotes an atmosphere of cross-functional collaboration and shared responsibility for software quality. By blending the diverse skills of developers, business representatives, and testers, it fosters superior team dynamics, enhances communication, and creates a synergistic effect where collective effort ensures project success.\n• Why the other choices are incorrect:\n\t• It allows team members to take on any role at any time: Incorrect. While team members share duties and cross-train, they do not randomly assume any specialized role without the requisite skills.\n\t• It only needs a single team to support the complete development project: Incorrect. Large enterprise applications can still require multiple cross-functional teams working together.\n\t• It embeds business representatives alongside developers in the same team: Incorrect. While true that business partners participate closely, this describes a structural characteristic rather than the primary advantage/benefit defined by the syllabus (which focuses on skill leveraging and team dynamics).",
     "set": "B"
   },
   {
