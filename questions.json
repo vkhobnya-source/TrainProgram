@@ -38,7 +38,7 @@
     ],
     "correct": 0,
     "chapter": 1,
-    "explanation": "",
+    "explanation": "Правильный ответ: **Tests wear out** («тесты изнашиваются», он же «парадокс пестицида»).\n\n**Почему это верно:**  \nПринцип говорит: если одни и те же тесты повторять много раз без изменений, они со временем перестают находить новые дефекты. В сценарии регрессионные тесты не обновлялись несколько итераций, и новых регрессионных дефектов не находилось. Менеджер рад, но тестировщик справедливо сомневается: возможно, проблема не в том, что дефектов нет, а в том, что тесты устарели и уже не проверяют новые изменения системы. Регрессионные тесты нужно регулярно пересматривать, обновлять и дополнять.\n\n**Почему другие варианты не подходят:**\n- **Absence-of-defects fallacy** — это про ситуацию, когда в продукте нет дефектов, но он всё равно не удовлетворяет потребности пользователей/бизнеса. Здесь речь не об этом.\n- **Defects cluster together** — принцип о том, что дефекты обычно группируются в отдельных модулях/областях; он не объясняет сомнение из-за неизменных регрессионных тестов.\n- **Exhaustive testing is impossible** — принцип о невозможности исчерпывающего тестирования всех комбинаций; к данной ситуации он не относится.",
     "set": "A"
   },
   {
@@ -1734,7 +1734,7 @@
     ],
     "correct": 0,
     "chapter": 1,
-    "explanation": "",
+    "explanation": "The principle of testing being addressed is \"Tests wear out\" (also known as the \"Pesticide paradox\" in previous versions of the ISTQB syllabus) [cite: 0.6.2].\n\nSyllabus Explanation (ISTQB CTFL 4.0):\n\n• The Core Rule: This principle states that if you run the exact same tests over and over again on an unchanging codebase, they will eventually stop discovering new defects [cite: 0.6.2].\n• The Solution: To find new bugs, test scenarios must be updated, replaced, or varied [cite: 0.6.2]. By keeping the overarching test conditions identical but varying the specific data and data combinations inside the test cases each time, testers effectively keep the test suite fresh and prevent the tests from wearing out [cite: 0.6.2]",
     "set": "D"
   },
   {

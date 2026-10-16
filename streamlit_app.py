@@ -1,8 +1,11 @@
 import streamlit as st
 import json
+import os
 import random
 from tempfile import NamedTemporaryFile
 from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 st.set_page_config(page_title="Тренажёр ISTQB CTFL v4.0", page_icon="📘", layout="centered")
 
@@ -54,6 +57,79 @@ def save_explanation(question, explanation):
         if question_key(session_question) == key:
             session_question["explanation"] = explanation
     load_questions.clear()
+
+
+def generate_explanation(question, correct_options):
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    if not api_key:
+        raise RuntimeError("Не задан OPENROUTER_API_KEY.")
+
+    model = os.getenv("OPENROUTER_MODEL", "deepseek/deepseek-v4.1-flash")
+    prompt = (
+        "Explain why the specified answer is correct for this ISTQB CTFL exam question. "
+        "Write a concise explanation in Russian, address the key concept, and briefly "
+        "clarify why the other options are not correct when useful. Do not guess if "
+        "the provided information is insufficient.\n\n"
+        f"Chapter: {question.get('chapter', 'unknown')}\n"
+        f"Question: {question['question']}\n"
+        "Options:\n"
+        + "\n".join(f"- {option}" for option in question["options"])
+        + "\nCorrect answer(s):\n"
+        + "\n".join(f"- {option}" for option in correct_options)
+    )
+    payload = {
+        "model": model,
+        "messages": [
+            {
+                "role": "system",
+                "content": "You are a precise ISTQB CTFL v4.0 exam tutor.",
+            },
+            {"role": "user", "content": prompt},
+        ],
+        "temperature": 0.2,
+    }
+    request = Request(
+        os.getenv(
+            "OPENROUTER_API_URL",
+            "https://openrouter.ai/api/v1/chat/completions",
+        ),
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": os.getenv("OPENROUTER_SITE_URL", "http://localhost"),
+            "X-Title": os.getenv("OPENROUTER_APP_NAME", "ISTQB CTFL Trainer"),
+        },
+        method="POST",
+    )
+
+    try:
+        with urlopen(request, timeout=45) as response:
+            result = json.loads(response.read().decode("utf-8"))
+    except HTTPError as error:
+        provider_detail = ""
+        try:
+            error_body = json.loads(error.read().decode("utf-8"))
+            provider_detail = error_body.get("error", {}).get("message", "")
+        except (AttributeError, UnicodeDecodeError, json.JSONDecodeError):
+            pass
+        detail = f"OpenRouter вернул HTTP {error.code}."
+        if provider_detail:
+            detail = f"{detail} {provider_detail}"
+        raise RuntimeError(detail) from error
+    except URLError as error:
+        raise RuntimeError("Не удалось подключиться к OpenRouter.") from error
+    except (TimeoutError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise RuntimeError("OpenRouter вернул некорректный ответ или запрос истёк.") from error
+
+    try:
+        explanation = result["choices"][0]["message"]["content"]
+        if not isinstance(explanation, str) or not explanation.strip():
+            raise ValueError
+    except (KeyError, IndexError, TypeError, ValueError) as error:
+        raise RuntimeError("OpenRouter не вернул текст пояснения.") from error
+
+    return explanation.strip()
 
 
 def init_session():
@@ -218,10 +294,22 @@ def run():
                 if is_multi_select else [options[correct_idx]]
             )
             st.success(f"Правильный ответ: {', '.join(correct_options)}")
+            explanation_key = f"explanation_{idx}"
+            st.session_state.setdefault(
+                explanation_key, str(q.get("explanation") or "")
+            )
+            if st.button("Сгенерировать пояснение с помощью AI", key=f"generate_explanation_{idx}"):
+                try:
+                    st.session_state[explanation_key] = generate_explanation(
+                        q, correct_options
+                    )
+                except RuntimeError as error:
+                    st.error(f"Не удалось сгенерировать пояснение: {error}")
+                else:
+                    st.success("Пояснение создано. Проверьте его и сохраните.")
             st.text_area(
                 "Пояснение к правильному ответу",
-                value=str(q.get("explanation") or ""),
-                key=f"explanation_{idx}",
+                key=explanation_key,
                 height=120,
             )
             if st.button("Сохранить пояснение", key=f"save_explanation_{idx}"):
