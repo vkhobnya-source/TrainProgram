@@ -11,6 +11,17 @@ from urllib.request import Request, urlopen
 
 st.set_page_config(page_title="Тренажёр ISTQB CTFL v4.0", page_icon="📘", layout="centered")
 
+st.markdown(
+    """
+    <style>
+    .block-container {
+        max-width: 1104px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 QUESTIONS_FILE = Path(__file__).parent / "questions.json"
 PASS_THRESHOLD = 0.65
 
