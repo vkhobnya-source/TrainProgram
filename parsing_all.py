@@ -1,18 +1,149 @@
 from pypdf import PdfReader
+from PIL import Image, ImageOps
+import io
+import logging
 import re
 import json
 from pathlib import Path
 
+logging.getLogger("pypdf").setLevel(logging.ERROR)
+
+
+def extract_pages(pdf_path):
+    reader = PdfReader(pdf_path)
+    return [
+        page.extract_text(extraction_mode="layout") or ""
+        for page in reader.pages
+    ]
+
 
 def extract_text(pdf_path):
-    reader = PdfReader(pdf_path)
-    return "\n".join((p.extract_text() or "") for p in reader.pages)
+    return "\n".join(extract_pages(pdf_path))
 
 
 def clean(text):
-    text = re.sub(r'[ \t]+', ' ', text)
+    lines = []
+    for line in text.splitlines():
+        if line.startswith("  ") or len(re.findall(r'\S {2,}\S', line)) >= 2:
+            lines.append(line.rstrip())
+        else:
+            lines.append(re.sub(r'[ \t]+', ' ', line).strip())
+    text = "\n".join(lines)
     text = re.sub(r'\n{3,}', '\n\n', text)
     return text.strip()
+
+
+def _max_blank_run(text):
+    best = current = 0
+    for line in text.splitlines():
+        if line.strip():
+            current = 0
+        else:
+            current += 1
+            best = max(best, current)
+    return best
+
+
+def _on_background(image, background):
+    if image.mode in ("RGBA", "LA") or "transparency" in image.info:
+        rgba = image.convert("RGBA")
+        canvas = Image.new("RGBA", rgba.size, background + (255,))
+        canvas.alpha_composite(rgba)
+        return canvas.convert("RGB")
+    return image.convert("RGB")
+
+
+def _dark_pixels(visible):
+    histogram = visible.convert("L").histogram()
+    return sum(histogram[:215])
+
+
+def _prepare_image(data):
+    try:
+        image = Image.open(io.BytesIO(data))
+        image.load()
+    except Exception:
+        return None, 0
+
+    if image.width < 300 or image.height < 120:
+        return None, 0
+
+    visible = _on_background(image, (255, 255, 255))
+    dark = _dark_pixels(visible)
+    total = visible.width * visible.height
+
+    if dark < total * 0.001:
+        visible = ImageOps.invert(_on_background(image, (0, 0, 0)))
+        dark = _dark_pixels(visible)
+    elif dark > total * 0.5:
+        visible = ImageOps.invert(visible)
+        dark = _dark_pixels(visible)
+
+    if dark < total * 0.001 or dark > total * 0.5:
+        return None, 0
+    return visible, dark
+
+
+def _without_footer(text):
+    return re.split(
+        r'\n\s*Version\s+\S+.*?Page\s+\d+\s+of\s+\d+.*', text, maxsplit=1
+    )[0]
+
+
+def extract_diagrams(pdf_path):
+    reader = PdfReader(pdf_path)
+    current_set = None
+    diagrams = {}
+
+    for page in reader.pages:
+        text = page.extract_text(extraction_mode="layout") or ""
+        text = _without_footer(text)
+        set_match = re.search(
+            r'Sample\s+Exams?\s+set\s+([A-F])\b', text, re.IGNORECASE
+        )
+        if set_match:
+            current_set = set_match.group(1).upper()
+
+        question_matches = list(re.finditer(r'Question #(\d+)', text))
+        if not question_matches or current_set is None:
+            continue
+
+        segments = []
+        for i, match in enumerate(question_matches):
+            end = (
+                question_matches[i + 1].start()
+                if i + 1 < len(question_matches)
+                else len(text)
+            )
+            segment = text[match.start():end].strip()
+            segments.append(
+                (int(match.group(1)), _max_blank_run(segment))
+            )
+
+        number, gap = max(segments, key=lambda item: item[1])
+        if gap < 4:
+            continue
+
+        best = None
+        for embedded in page.images:
+            visible, score = _prepare_image(embedded.data)
+            if visible is not None and (best is None or score > best[1]):
+                best = (visible, score)
+
+        if best is not None:
+            diagrams[(current_set, number)] = best[0]
+
+    return diagrams
+
+
+def save_diagrams(diagrams, out_dir):
+    out_dir.mkdir(parents=True, exist_ok=True)
+    paths = {}
+    for (set_name, number), image in diagrams.items():
+        filename = f"{set_name}{number:02d}.png"
+        image.save(out_dir / filename)
+        paths[(set_name, number)] = f"assets/diagrams/{filename}"
+    return paths
 
 
 def split_by_sets(text):
@@ -147,9 +278,26 @@ def lo_map_from_answer_table(text, set_name):
     }
 
 
+def load_explanations(out_json):
+    path = Path(out_json)
+    if not path.exists():
+        return {}
+    try:
+        with open(path, encoding="utf-8") as f:
+            previous = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return {
+        (q.get("set"), q.get("number")): q.get("explanation", "")
+        for q in previous
+        if q.get("explanation")
+    }
+
+
 def main(q_pdf, a_pdf, out_json):
     q_text = clean(extract_text(q_pdf))
     a_text = clean(extract_text(a_pdf))
+    old_explanations = load_explanations(out_json)
 
     all_questions = []
     for set_name, block in split_by_sets(q_text):
@@ -205,6 +353,21 @@ def main(q_pdf, a_pdf, out_json):
         print(f"Пропущено без ответа: {skipped}")
     if not valid:
         raise ValueError("Ни один вопрос не сопоставлен с правильным ответом.")
+
+    diagrams = extract_diagrams(q_pdf)
+    image_paths = save_diagrams(
+        diagrams, Path(out_json).resolve().parent / "assets" / "diagrams"
+    )
+    for q in valid:
+        image_path = image_paths.get((q["set"], q["number"]))
+        if image_path:
+            q["image"] = image_path
+        if not q["explanation"]:
+            q["explanation"] = old_explanations.get(
+                (q["set"], q["number"]), ""
+            )
+
+    print(f"Найдено схем: {len(image_paths)}")
 
     with open(out_json, "w", encoding="utf-8") as f:
         json.dump(valid, f, ensure_ascii=False, indent=2)

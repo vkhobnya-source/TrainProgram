@@ -2,6 +2,7 @@ import streamlit as st
 import json
 import os
 import random
+import re
 from tempfile import NamedTemporaryFile
 from pathlib import Path
 from urllib.error import HTTPError, URLError
@@ -21,6 +22,20 @@ def load_questions():
 
 def question_key(question):
     return question.get("set"), question.get("number"), question.get("question")
+
+
+def has_layout_block(text):
+    run = 0
+    for line in text.splitlines():
+        gaps = len(re.findall(r'\S {2,}\S', line))
+        is_row = gaps >= 1 and (line.startswith("  ") or gaps >= 2)
+        if is_row:
+            run += 1
+            if run >= 2:
+                return True
+        else:
+            run = 0
+    return False
 
 
 def save_explanation(question, explanation):
@@ -260,7 +275,16 @@ def run():
     st.caption(f"Вопрос {idx + 1} из {total}  ·  Глава {q['chapter']}")
 
     # Вопрос
-    st.markdown(f"### {q['question']}")
+    if has_layout_block(q["question"]):
+        st.code(q["question"], language=None)
+    else:
+        st.markdown(f"### {q['question']}")
+
+    image_path = q.get("image")
+    if image_path:
+        image_file = Path(__file__).parent / image_path
+        if image_file.exists():
+            st.image(str(image_file))
 
     # Варианты ответа
     is_multi_select = isinstance(q["correct"], list)
