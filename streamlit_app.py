@@ -1,4 +1,5 @@
 import streamlit as st
+import base64
 import json
 import os
 import random
@@ -74,12 +75,35 @@ def save_explanation(question, explanation):
     load_questions.clear()
 
 
+def question_image_data_uri(question):
+    image_path = question.get("image")
+    if not image_path:
+        return None
+
+    image_file = Path(__file__).parent / image_path
+    try:
+        image_bytes = image_file.read_bytes()
+    except OSError:
+        return None
+
+    suffix = image_file.suffix.lower()
+    media_type = {
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".webp": "image/webp",
+        ".gif": "image/gif",
+    }.get(suffix, "image/png")
+    encoded = base64.b64encode(image_bytes).decode("ascii")
+    return f"data:{media_type};base64,{encoded}"
+
+
 def generate_explanation(question, correct_options):
     api_key = os.getenv("OPENROUTER_API_KEY")
     if not api_key:
         raise RuntimeError("Не задан OPENROUTER_API_KEY.")
 
     model = os.getenv("OPENROUTER_MODEL", "deepseek/deepseek-v4.1-flash")
+    image_uri = question_image_data_uri(question)
     prompt = (
         "Explain why the specified answer is correct for this ISTQB CTFL exam question. "
         "Write a concise explanation in Russian, address the key concept, and briefly "
@@ -92,6 +116,18 @@ def generate_explanation(question, correct_options):
         + "\nCorrect answer(s):\n"
         + "\n".join(f"- {option}" for option in correct_options)
     )
+    if image_uri:
+        prompt += (
+            "\n\nUse the attached diagram/figure from the question as well. "
+            "Base your reasoning on both the text and the image."
+        )
+        user_content = [
+            {"type": "text", "text": prompt},
+            {"type": "image_url", "image_url": {"url": image_uri}},
+        ]
+    else:
+        user_content = prompt
+
     payload = {
         "model": model,
         "messages": [
@@ -99,7 +135,7 @@ def generate_explanation(question, correct_options):
                 "role": "system",
                 "content": "You are a precise ISTQB CTFL v4.0 exam tutor.",
             },
-            {"role": "user", "content": prompt},
+            {"role": "user", "content": user_content},
         ],
         "temperature": 0.2,
     }
