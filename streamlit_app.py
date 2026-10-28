@@ -50,6 +50,12 @@ def has_layout_block(text):
     return False
 
 
+def format_explanation(text):
+    # Streamlit's Markdown renderer uses dollar delimiters for LaTeX math.
+    text = re.sub(r"\\\[(.*?)\\\]", lambda match: f"$$\n{match.group(1).strip()}\n$$", text, flags=re.DOTALL)
+    return re.sub(r"\\\(([^\n]*?)\\\)", lambda match: f"${match.group(1)}$", text)
+
+
 def save_explanation(question, explanation):
     with open(QUESTIONS_FILE, encoding="utf-8") as f:
         questions = json.load(f)
@@ -378,14 +384,18 @@ def run():
                     st.error(f"Не удалось сгенерировать пояснение: {error}")
                 else:
                     st.success("Пояснение создано. Проверьте его и сохраните.")
-            st.text_area(
-                "Пояснение к правильному ответу",
-                key=explanation_key,
-                height=120,
-            )
-            if st.button("Сохранить пояснение", key=f"save_explanation_{idx}"):
-                save_explanation(q, st.session_state[f"explanation_{idx}"])
-                st.success("Пояснение сохранено в questions.json.")
+            if st.session_state[explanation_key].strip():
+                st.caption("Пояснение к правильному ответу")
+                st.info(format_explanation(st.session_state[explanation_key]))
+            with st.expander("Редактировать пояснение"):
+                st.text_area(
+                    "Текст пояснения (Markdown и LaTeX)",
+                    key=explanation_key,
+                    height=120,
+                )
+                if st.button("Сохранить пояснение", key=f"save_explanation_{idx}"):
+                    save_explanation(q, st.session_state[f"explanation_{idx}"])
+                    st.success("Пояснение сохранено в questions.json.")
 
         if st.button("Ответить", type="primary") and selected:
             st.session_state.selected = selected
@@ -423,7 +433,7 @@ def run():
             )
             st.error(f"❌ Неверно. Правильный ответ: {', '.join(correct_options)}")
 
-        st.info(f"💡 {q['explanation']}")
+        st.info(f"💡 {format_explanation(q['explanation'])}")
 
         if st.button("Следующий вопрос", type="primary"):
             st.session_state.index += 1
