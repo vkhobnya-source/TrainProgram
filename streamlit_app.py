@@ -9,6 +9,8 @@ from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
+from cheatsheet import generate_cheatsheet, list_cheatsheets
+
 st.set_page_config(page_title="Тренажёр ISTQB CTFL v4.0", page_icon="📘", layout="centered")
 
 st.markdown(
@@ -200,6 +202,54 @@ def generate_explanation(question, correct_options):
     return explanation.strip()
 
 
+def make_cheatsheet(wrong_questions):
+    """Генерирует шпаргалку и открывает её на просмотр."""
+    try:
+        with st.spinner("Генерирую шпаргалку…"):
+            path, _ = generate_cheatsheet(wrong_questions)
+    except RuntimeError as error:
+        st.error(f"Не удалось создать шпаргалку: {error}")
+        return
+    st.session_state.view_cheatsheet = str(path)
+    st.rerun()
+
+
+def load_saved_wrong():
+    wrong_file = Path(__file__).parent / "wrong.json"
+    if not wrong_file.exists():
+        return []
+    try:
+        with open(wrong_file, encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return []
+
+
+def show_cheatsheet_page():
+    """Страница просмотра шпаргалки. Возвращает True, если показана."""
+    path_str = st.session_state.get("view_cheatsheet")
+    if not path_str:
+        return False
+    path = Path(path_str)
+    if not path.exists():
+        st.session_state.view_cheatsheet = None
+        return False
+
+    if st.button("⬅️ Вернуться к тренажёру"):
+        st.session_state.view_cheatsheet = None
+        st.rerun()
+
+    content = path.read_text(encoding="utf-8")
+    st.markdown(content)
+    st.download_button(
+        "⬇️ Скачать Markdown",
+        content,
+        file_name=path.name,
+        mime="text/markdown",
+    )
+    return True
+
+
 def init_session():
     if "index" not in st.session_state:
         st.session_state.index = 0
@@ -283,6 +333,31 @@ def run():
         st.divider()
         st.metric("Всего вопросов", len(all_q))
 
+        st.divider()
+        st.subheader("📝 Шпаргалки")
+        saved_wrong = load_saved_wrong()
+        if st.button(
+            "Создать по ошибкам последнего прохода",
+            disabled=not saved_wrong,
+            help="Использует сохранённый wrong.json" if saved_wrong else "Нет сохранённых ошибок",
+        ):
+            make_cheatsheet(saved_wrong)
+
+        sheets = list_cheatsheets()
+        if sheets:
+            selected_sheet = st.selectbox(
+                "Сохранённые версии",
+                sheets,
+                format_func=lambda p: p.stem.replace("cheatsheet_", ""),
+            )
+            if st.button("Открыть шпаргалку"):
+                st.session_state.view_cheatsheet = str(selected_sheet)
+                st.rerun()
+
+    # Просмотр шпаргалки вместо тренажёра
+    if show_cheatsheet_page():
+        return
+
     # Если тест ещё не начат
     if not st.session_state.questions:
         st.info("👈 Выберите режим в левой панели и нажмите «Начать / Начать заново»")
@@ -318,6 +393,9 @@ def run():
                 json.dump(st.session_state.wrong_list, f, ensure_ascii=False, indent=2)
             st.info(
                 f"Сохранено {len(st.session_state.wrong_list)} вопросов с ошибками — доступны в режиме «Работа над ошибками».")
+
+            if st.button("📝 Создать шпаргалку по этим ошибкам", type="primary"):
+                make_cheatsheet(st.session_state.wrong_list)
 
         return
 

@@ -1,0 +1,16 @@
+[
+  {
+    "number": 39,
+    "question": "Tools from which of the following categories help with the organization of test cases, detected\ndefects and configuration management?",
+    "options": [
+      "Test execution and coverage tools",
+      "Test design and implementation tools",
+      "Defect management tools",
+      "Test management tools"
+    ],
+    "correct": 3,
+    "chapter": 6,
+    "explanation": "Правильный ответ — **Test management tools** (инструменты управления тестированием).\n\nКлючевой момент: в ISTQB CTFL инструменты управления тестированием поддерживают организацию и управление тестовыми артефактами и процессом в целом: требованиями, тест-кейсами, тестовым ПО, результатами тестов, дефектами, трассируемостью, отчётностью и **конфигурационным управлением**. Поэтому именно эта категория покрывает все три указанные области: организацию тест-кейсов, обнаруженных дефектов и конфигурационного управления.\n\nПочему другие варианты не подходят:\n- **Test execution and coverage tools** — предназначены для запуска тестов и измерения покрытия, а не для управления тест-кейсами, дефектами и конфигурациями.\n- **Test design and implementation tools** — помогают создавать/проектировать тесты и тестовые данные, но не управляют дефектами и конфигурационным управлением.\n- **Defect management tools** — управляют только дефектами, но не тест-кейсами и не конфигурационным управлением в целом.\n\nТаким образом, только **Test management tools** соответствуют всем перечисленным задачам.",
+    "set": "C"
+  }
+]
