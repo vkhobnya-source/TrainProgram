@@ -1,16 +1,16 @@
 [
   {
-    "number": 30,
-    "question": "Which of the following is NOT a purpose of a test plan?",
+    "number": 7,
+    "question": "Which of the following skills (i-v) are the MOST important skills of a tester?\n\n            i.      Having domain knowledge\n           ii.      Creating a product vision\n           iii.      Being a good team player\n           iv.      Planning and organizing the work of the team\n           v.      Critical thinking",
     "options": [
-      "To define test data and expected results for component tests and component integration tests",
-      "To define as exit criteria from the component test level that “100% statement coverage and 100% branch coverage must be achieved”",
-      "To describe what fields the test progress report shall contain and what should be the form of this report",
-      "To explain why system integration testing will be excluded from testing, although the test strategy requires this test level"
+      "ii and iv are important",
+      "i, iii and v are important",
+      "i, ii and v are important",
+      "iii and iv are important"
     ],
-    "correct": 0,
-    "chapter": 5,
-    "explanation": "Правильный ответ — **«To define test data and expected results for component tests and component integration tests»**, потому что это **не назначение тест-плана**.\n\n**Ключевая мысль:** тест-план — это документ планирования управления тестированием. Он определяет *что, как, когда, кем и по каким критериям* будет тестироваться: объём, подход, ресурсы, расписание, риски, критерии выхода, отчётность и т.п. Но он **не содержит детальных тестовых данных и ожидаемых результатов** для конкретных тестов. Это уже задача **тест-дизайна / спецификации тест-кейсов** (test analysis and design), где создаются тестовые условия, тест-кейсы, тестовые данные и ожидаемые результаты.\n\nПочему остальные варианты — назначение/содержание тест-плана:\n\n- **Определить критерии выхода для компонентного тестирования** (например, 100% statement coverage и 100% branch coverage) — да, тест-план может и должен задавать exit criteria для уровней тестирования.\n- **Описать поля и форму отчёта о прогрессе тестирования** — да, тест-план может определять, как будет организована отчётность и коммуникация о ходе тестирования.\n- **Объяснить, почему системное интеграционное тестирование исключено, хотя стратегия его требует** — да, тест-план фиксирует объём, исключения, допущения и обоснования отклонений от стратегии.\n\nТаким образом, вариант с определением тестовых данных и ожидаемых результатов — это деятельность по проектированию тестов, а не цель тест-плана.",
-    "set": "C"
+    "correct": 1,
+    "chapter": 1,
+    "explanation": "\nSyllabus Explanation (ISTQB CTFL 4.0):\n\n• i. Having domain knowledge (True): Essential for understanding how the user interacts with the system and for designing experience-based test cases [cite: 0.6.1].\n• ii. Creating a product vision (False): This is primarily the task of the Product Owner, Business Analyst, or business representatives, not the tester [cite: 0.6.2].\n• iii. Being a good team player (True): Vital for practicing effective collaboration under the whole-team approach [cite: 0.6.2].\n• iv. Planning and organizing the work of the team (False): This falls under a Test Management role, or is handled collectively by the Agile team, rather than being an individual tester's skill [cite: 0.6.2].\n• v. Critical thinking (True): One of the most important core generic skills for a tester to challenge assumptions, find hidden edges, and isolate software defects [cite: 0.6.2].\n",
+    "set": "A"
   }
 ]
