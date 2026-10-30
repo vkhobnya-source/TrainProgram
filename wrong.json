@@ -1,16 +1,16 @@
 [
   {
-    "number": 7,
-    "question": "Which of the following skills (i-v) are the MOST important skills of a tester?\n\n            i.      Having domain knowledge\n           ii.      Creating a product vision\n           iii.      Being a good team player\n           iv.      Planning and organizing the work of the team\n           v.      Critical thinking",
+    "number": 20,
+    "question": "You are testing a simplified apartment search form which has only two search criteria:\n\n          •    floor (with three possible options: ground floor; first floor; second or higher floor)\n          •    garden type (with three possible options: no garden; small garden; large garden)\n\nEach of the apartment on the ground floor has a garden, apartments on higher floors don’t. The form\nhas a built-in validation mechanism that will not allow you to use the search criteria which violate this\nrule.\n\nEach test has two input values: floor and garden type. You want to apply equivalence partitioning\n(EP) to cover each floor and each garden type in your tests.\n\nWhat is the minimal number of test cases to achieve 100% EP coverage for valid partitions?",
     "options": [
-      "ii and iv are important",
-      "i, iii and v are important",
-      "i, ii and v are important",
-      "iii and iv are important"
+      "3",
+      "4",
+      "5",
+      "6"
     ],
     "correct": 1,
-    "chapter": 1,
-    "explanation": "\nSyllabus Explanation (ISTQB CTFL 4.0):\n\n• i. Having domain knowledge (True): Essential for understanding how the user interacts with the system and for designing experience-based test cases [cite: 0.6.1].\n• ii. Creating a product vision (False): This is primarily the task of the Product Owner, Business Analyst, or business representatives, not the tester [cite: 0.6.2].\n• iii. Being a good team player (True): Vital for practicing effective collaboration under the whole-team approach [cite: 0.6.2].\n• iv. Planning and organizing the work of the team (False): This falls under a Test Management role, or is handled collectively by the Agile team, rather than being an individual tester's skill [cite: 0.6.2].\n• v. Critical thinking (True): One of the most important core generic skills for a tester to challenge assumptions, find hidden edges, and isolate software defects [cite: 0.6.2].\n",
+    "chapter": 4,
+    "explanation": "Правильный ответ — **4**, потому что при эквивалентном разбиении нужно покрыть каждый **допустимый** класс эквивалентности хотя бы одним тестом, но комбинации ограничены бизнес-правилом.\n\nДопустимые комбинации:\n\n| Floor | Garden type |\n|---|---|\n| ground floor | small garden |\n| ground floor | large garden |\n| first floor | no garden |\n| second or higher floor | no garden |\n\nПочему меньше 4 нельзя:\n\n- Для `small garden` и `large garden` допустим только `ground floor`, значит нужно минимум **2 теста** на ground floor.\n- Для `first floor` и `second or higher floor` допустим только `no garden`, значит нужно минимум **2 теста** на верхние этажи.\n- Итого минимум: **2 + 2 = 4**.\n\nПочему другие варианты не подходят:\n\n- **3** — недостаточно: нельзя одним тестом покрыть и `small garden`, и `large garden`, а также нельзя одним тестом покрыть и `first floor`, и `second or higher floor`.\n- **5 и 6** — не минимальны: 4 теста уже дают 100% покрытие всех допустимых классов эквивалентности.\n\nКлючевой момент: EP требует покрыть все допустимые классы, но из-за ограничений формы не все сочетания floor и garden type являются допустимыми. Минимальный набор — 4 теста.",
     "set": "A"
   }
 ]
